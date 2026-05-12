@@ -31,3 +31,18 @@ jobs:
       with:
         name: arogya-sahaya-debug-apk
         path: app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        files: app/build/outputs/apk/debug/app-debug.apk
+        tag_name: latest
+        name: Latest Continuous Build
+        body: |
+          This is an automated build of the Arogya Sahaya app.
+          Last updated: ${{ github.event.head_commit.timestamp }}
+        draft: false
+        prerelease: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
