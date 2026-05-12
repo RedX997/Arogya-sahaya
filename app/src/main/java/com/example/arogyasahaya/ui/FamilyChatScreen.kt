@@ -102,16 +102,12 @@ fun FamilyChatScreen(
 
     fun sendMessage(text: String) {
         if (text.isEmpty()) return
-        
-        // Add to local UI
         messages.add(ChatMessage("Me", text, System.currentTimeMillis(), true))
         
-        // Send SMS to all family members (or selected)
         coroutineScope.launch {
             try {
                 val smsManager: SmsManager = context.getSystemService(SmsManager::class.java)
                 val chatPayload = "[AS_CHAT] $text"
-                
                 familyMembers.forEach { member ->
                     smsManager.sendTextMessage(member.phoneNumber, null, chatPayload, null, null)
                 }
@@ -119,89 +115,90 @@ fun FamilyChatScreen(
                 Log.e("Chat", "Failed to send SMS", e)
             }
         }
-        
         messageText = ""
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text("FAMILY CIRCLE CHAT", fontWeight = FontWeight.Black, fontSize = 16.sp)
-                        Text(if (familyMembers.isEmpty()) "Add family to start syncing" else "${familyMembers.size} members active", fontSize = 11.sp, color = HealthGreen)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* Call Group */ }) {
-                        Icon(Icons.Default.VideoCall, contentDescription = "Video Call", tint = HealthGreen)
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth().imePadding(),
-                tonalElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Column {
-                    if (familyMembers.isEmpty()) {
-                        Text(
-                            "Note: Add family members to sync chat across phones.",
-                            modifier = Modifier.padding(8.dp).fillMaxWidth(),
-                            fontSize = 10.sp,
-                            color = HealthOrange,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = messageText,
-                            onValueChange = { messageText = it },
-                            placeholder = { Text("Share a health update...") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = HealthGreen,
-                                unfocusedBorderColor = Color.LightGray
-                            )
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = { sendMessage(messageText) },
-                            modifier = Modifier.size(48.dp).background(HealthGreen, CircleShape)
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { 
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("CARE CIRCLE", fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 2.sp)
+                            Text(if (familyMembers.isEmpty()) "Add family to start" else "${familyMembers.size} MEMBERS SYNCED", fontSize = 10.sp, color = HealthGreen, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { /* Call Group */ }) {
+                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(HealthGreen.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.VideoCall, contentDescription = "Video Call", tint = HealthGreen, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                )
+            },
+            bottomBar = {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().imePadding(),
+                    tonalElevation = 0.dp,
+                    color = Color.Transparent
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.White)
+                            IconButton(onClick = { /* Attachment */ }) {
+                                Icon(Icons.Default.AddCircle, contentDescription = null, tint = Color.Gray)
+                            }
+                            TextField(
+                                value = messageText,
+                                onValueChange = { messageText = it },
+                                placeholder = { Text("Update your family...") },
+                                modifier = Modifier.weight(1f),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                )
+                            )
+                            IconButton(
+                                onClick = { sendMessage(messageText) },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(if (messageText.isNotEmpty()) HealthGreen else Color.Gray.copy(alpha = 0.2f))
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
                         }
                     }
                 }
             }
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-            
-            items(messages) { message ->
-                ChatBubble(message)
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(messages) { message ->
+                    ChatBubble(message)
+                }
             }
-            
-            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
@@ -209,34 +206,64 @@ fun FamilyChatScreen(
 @Composable
 fun ChatBubble(message: ChatMessage) {
     val sdf = SimpleDateFormat("h:mm a", Locale.getDefault())
-    Column(
+    val bubbleColor = if (message.isMe) HealthBlue else MaterialTheme.colorScheme.surface
+    val contentColor = if (message.isMe) Color.White else MaterialTheme.colorScheme.onSurface
+
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (message.isMe) Alignment.End else Alignment.Start
+        horizontalArrangement = if (message.isMe) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom
     ) {
         if (!message.isMe) {
-            Text(message.sender, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, modifier = Modifier.padding(start = 8.dp, bottom = 4.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(HealthBlue.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(message.sender.take(1), fontWeight = FontWeight.Black, color = HealthBlue, fontSize = 12.sp)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
         }
-        Surface(
-            color = if (message.isMe) HealthGreen else MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (message.isMe) 16.dp else 0.dp,
-                bottomEnd = if (message.isMe) 0.dp else 16.dp
-            )
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                Text(
-                    message.message,
-                    color = if (message.isMe) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 15.sp
-                )
-                Text(
-                    sdf.format(Date(message.time)),
-                    fontSize = 10.sp,
-                    color = if (message.isMe) Color.White.copy(alpha = 0.7f) else Color.Gray,
-                    modifier = Modifier.align(Alignment.End)
-                )
+        
+        Column(horizontalAlignment = if (message.isMe) Alignment.End else Alignment.Start) {
+            if (!message.isMe) {
+                Text(message.sender, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+            }
+            Surface(
+                color = bubbleColor,
+                shape = RoundedCornerShape(
+                    topStart = 20.dp,
+                    topEnd = 20.dp,
+                    bottomStart = if (message.isMe) 20.dp else 4.dp,
+                    bottomEnd = if (message.isMe) 4.dp else 20.dp
+                ),
+                tonalElevation = 2.dp,
+                shadowElevation = 1.dp
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    Text(message.message, color = contentColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        sdf.format(Date(message.time)),
+                        fontSize = 9.sp,
+                        color = contentColor.copy(alpha = 0.6f),
+                        modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+        
+        if (message.isMe) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(HealthBlue),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("ME", fontWeight = FontWeight.Black, color = Color.White, fontSize = 10.sp)
             }
         }
     }

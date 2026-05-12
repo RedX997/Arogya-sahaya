@@ -138,12 +138,17 @@ fun AshaConnectScreen(
 @Composable
 fun DynamicCalendarView(events: List<AshaEvent>) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                shadowElevation = 8.dp.toPx()
+                shape = RoundedCornerShape(32.dp)
+            },
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             val calendar = Calendar.getInstance()
             val currentMonth = calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault())
             val currentYear = calendar.get(Calendar.YEAR)
@@ -154,28 +159,29 @@ fun DynamicCalendarView(events: List<AshaEvent>) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("${currentMonth.uppercase()} $currentYear", fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color(0xFF1976D2))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF1976D2)))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Camp", fontSize = 10.sp, color = Color.Gray)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFFFA000)))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Visit", fontSize = 10.sp, color = Color.Gray)
+                Text(
+                    "${currentMonth.uppercase()} $currentYear", 
+                    fontWeight = FontWeight.Black, 
+                    fontSize = 18.sp, 
+                    color = Color(0xFF1976D2),
+                    letterSpacing = 1.sp
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LegendItem("Camp", Color(0xFF1976D2))
+                    LegendItem("Visit", Color(0xFFFFA000))
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // Days of Week Header
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
-                    Text(day, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Text(day, fontSize = 12.sp, color = Color.Gray.copy(alpha = 0.5f), fontWeight = FontWeight.Black)
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Calendar Grid
             val days = (1..daysInMonth).toList()
@@ -197,41 +203,48 @@ fun DynamicCalendarView(events: List<AshaEvent>) {
                         val isToday = Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == day
                         
                         val bgColor = when {
-                            isCamp -> Color(0xFF1976D2).copy(alpha = 0.2f)
-                            isVisit -> Color(0xFFFFA000).copy(alpha = 0.2f)
-                            isToday -> Color.LightGray.copy(alpha = 0.3f)
+                            isCamp -> Color(0xFF1976D2)
+                            isVisit -> Color(0xFFFFA000)
+                            isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                             else -> Color.Transparent
                         }
                         
                         val textColor = when {
-                            isCamp -> Color(0xFF1976D2)
-                            isVisit -> Color(0xFFFFA000)
-                            else -> MaterialTheme.colorScheme.onSurface
+                            isCamp || isVisit -> Color.White
+                            isToday -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         }
                         
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
+                                .size(38.dp)
+                                .clip(CircleShape)
                                 .background(bgColor),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = day.toString(),
-                                fontSize = 12.sp,
-                                fontWeight = if (dayEvents.isNotEmpty() || isToday) FontWeight.Black else FontWeight.Normal,
+                                fontSize = 13.sp,
+                                fontWeight = if (dayEvents.isNotEmpty() || isToday) FontWeight.Black else FontWeight.Medium,
                                 color = textColor
                             )
                         }
                     }
-                    // Fill empty spaces
                     repeat(7 - rowDays.size) {
-                        Spacer(modifier = Modifier.size(36.dp))
+                        Spacer(modifier = Modifier.size(38.dp))
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+}
+
+@Composable
+fun LegendItem(label: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(color))
+        Text(label, fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
     }
 }
 

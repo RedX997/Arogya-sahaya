@@ -51,6 +51,8 @@ import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import com.example.arogyasahaya.ui.components.*
+
 @Composable
 fun HomeScreen(
     viewModel: HealthViewModel,
@@ -207,120 +209,124 @@ fun HomeScreen(
                             }
                         }
                     }
+                }
             }
-        }
 
-
-        // Daily Insights (The Blog Feature)
-        item {
-            Text(
-                "Daily Insights",
-                color = greetingColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            val insights by viewModel.dailyInsights.observeAsState(initial = emptyList())
-            val scrollState = androidx.compose.foundation.lazy.rememberLazyListState()
-            
-            // Auto-scrolling effect
-            LaunchedEffect(insights) {
-                if (insights.isNotEmpty()) {
-                    while (true) {
-                        delay(3000)
-                        val nextIndex = (scrollState.firstVisibleItemIndex + 1) % insights.size
-                        scrollState.animateScrollToItem(nextIndex)
+            // Mood Selector
+            item {
+                Text(
+                    "How are you feeling?",
+                    color = greetingColor,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    listOf("😊" to "Good", "😐" to "Okay", "😔" to "Low", "🤒" to "Sick", "😴" to "Tired").forEach { (emoji, label) ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { /* Logic to log mood */ }
+                                .padding(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(emoji, fontSize = 24.sp)
+                            }
+                            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subtitleColor)
+                        }
                     }
                 }
             }
 
-            androidx.compose.foundation.lazy.LazyRow(
-                state = scrollState,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(end = 16.dp)
-            ) {
-                items(insights) { insight ->
-                    InsightCard(
-                        insight.title,
-                        insight.subtitle,
-                        getIconForName(insight.icon),
-                        Color(insight.color)
-                    )
+            // Daily Insights
+            item {
+                Text(
+                    "Daily Insights",
+                    color = greetingColor,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                val insights by viewModel.dailyInsights.observeAsState(initial = emptyList())
+                val scrollState = androidx.compose.foundation.lazy.rememberLazyListState()
+                
+                LaunchedEffect(insights) {
+                    if (insights.isNotEmpty()) {
+                        while (true) {
+                            delay(3000)
+                            val nextIndex = (scrollState.firstVisibleItemIndex + 1) % insights.size
+                            scrollState.animateScrollToItem(nextIndex)
+                        }
+                    }
+                }
+
+                androidx.compose.foundation.lazy.LazyRow(
+                    state = scrollState,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(end = 16.dp)
+                ) {
+                    items(insights) { insight ->
+                        InsightCard(
+                            insight.title,
+                            insight.subtitle,
+                            getIconForName(insight.icon),
+                            Color(insight.color)
+                        )
+                    }
                 }
             }
-        }
 
-        // Health Shield Widget (Gamification)
-        item {
-            HealthShieldWidget(streakDays = 7) // Simulated 7-day streak
-        }
+            item { HealthShieldWidget(streakDays = 7) }
 
-        // Health Score Widget
-        item {
-            val score by viewModel.healthScore.observeAsState(initial = 85f)
-            HealthScoreWidget(adherence = score / 100f)
-        }
+            item {
+                val score by viewModel.healthScore.observeAsState(initial = 85f)
+                HealthScoreWidget(adherence = score / 100f)
+            }
 
-        // Family Circle Widget
-        item {
-            FamilyCircleWidget(
-                members = familyMembers,
-                onAddClick = { showAddFamilyDialog = true },
-                onViewChat = onViewChat
-            )
-        }
+            item {
+                FamilyCircleWidget(
+                    members = familyMembers,
+                    onAddClick = { showAddFamilyDialog = true },
+                    onViewChat = onViewChat
+                )
+            }
 
-        // Adherence Card
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
+            // Adherence Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().graphicsLayer {
                         shadowElevation = 8.dp.toPx()
                         shape = RoundedCornerShape(28.dp)
-                        clip = true
                     },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(28.dp)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    shape = RoundedCornerShape(28.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(HealthBlue, HealthBlue.copy(alpha = 0.8f))
-                                )
-                            )
+                            .background(Brush.linearGradient(listOf(HealthBlue, HealthBlue.copy(alpha = 0.8f))))
                             .padding(24.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    stringResource(R.string.today_adherence),
-                                    color = Color.White.copy(alpha = 0.8f),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text(stringResource(R.string.today_adherence), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.Bottom) {
-                                    Text(
-                                        "$takenCount / $totalCount",
-                                        fontSize = 38.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = Color.White
-                                    )
+                                    Text("$takenCount / $totalCount", fontSize = 38.sp, fontWeight = FontWeight.Black, color = Color.White)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        stringResource(R.string.medicines_taken),
-                                        color = Color.White.copy(alpha = 0.8f),
-                                        modifier = Modifier.padding(bottom = 8.dp),
-                                        fontSize = 14.sp
-                                    )
+                                    Text(stringResource(R.string.medicines_taken), color = Color.White.copy(alpha = 0.8f), modifier = Modifier.padding(bottom = 8.dp), fontSize = 14.sp)
                                 }
                             }
-                            
                             Box(contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     progress = { if (totalCount > 0) takenCount.toFloat() / totalCount else 0f },
@@ -330,327 +336,145 @@ fun HomeScreen(
                                     trackColor = Color.White.copy(alpha = 0.2f),
                                     strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                                 )
-                                Text(
-                                    text = if (totalCount > 0) "${((takenCount.toFloat() / totalCount) * 100).toInt()}%" else "0%",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = Color.White
-                                )
+                                Text(text = if (totalCount > 0) "${((takenCount.toFloat() / totalCount) * 100).toInt()}%" else "0%", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                             }
                         }
                     }
-            }
-        }
-        
-        // Refill Alerts
-        item {
-            AnimatedVisibility(
-                visible = lowStockMedicines.isNotEmpty(),
-                enter = fadeIn() + slideInVertically()
-            ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = HealthOrangeLight),
-                    shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, HealthOrange.copy(alpha = 0.2f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Warning, contentDescription = null, tint = HealthOrange)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(stringResource(R.string.refill_alert), fontWeight = FontWeight.Bold, color = HealthOrange, fontSize = 16.sp)
-                            Text(
-                                "Some medicines are running low. Tap to refill.",
-                                fontSize = 13.sp,
-                                color = HealthOrange.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
                 }
             }
-        }
-
-        // Medicine List Header
-        item {
-            Text(stringResource(R.string.todays_medicines), color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        }
-
-        if (medicines.isEmpty()) {
+            
+            // Refill Alerts
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.no_medicines), color = Color.Gray)
-                }
-            }
-        } else {
-            items(medicines, key = { it.id }) { medicine ->
-                MedicineStatusItem(
-                    medicine = medicine,
-                    onTakenClick = { 
-                        viewModel.markAsTaken(medicine)
-                        triggerVictory()
-                    },
-                    formatter = timeFormatter
-                )
-            }
-        }
-
-        // Latest Vitals Summary
-        item {
-            val vitals by viewModel.allVitals.observeAsState(initial = emptyList())
-            val latest = vitals.lastOrNull()
-            
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Latest Vitals",
-                        color = greetingColor,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        "View History",
-                        color = HealthBlue,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { onAddVital() }
-                    )
-                }
-                
-                if (latest != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        VitalSummaryCard(
-                            label = "BP",
-                            value = "${latest.systolic}/${latest.diastolic}",
-                            unit = "mmHg",
-                            color = HealthRed,
-                            modifier = Modifier.weight(1f)
-                        )
-                        VitalSummaryCard(
-                            label = "Heart",
-                            value = "${latest.heartRate}",
-                            unit = "bpm",
-                            color = HealthBlue,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (latest.sugar != null) {
-                            VitalSummaryCard(
-                                label = "Sugar",
-                                value = "${latest.sugar}",
-                                unit = "mg/dL",
-                                color = HealthOrange,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                } else {
+                AnimatedVisibility(visible = lowStockMedicines.isNotEmpty(), enter = fadeIn() + slideInVertically()) {
                     Card(
-                        modifier = Modifier.fillMaxWidth().height(80.dp).clickable { onAddVital() },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(24.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = HealthOrangeLight),
+                        shape = RoundedCornerShape(20.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, HealthOrange.copy(alpha = 0.2f))
                     ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No vitals logged yet. Tap to start.", color = Color.Gray, fontSize = 14.sp)
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = HealthOrange)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(stringResource(R.string.refill_alert), fontWeight = FontWeight.Bold, color = HealthOrange, fontSize = 16.sp)
+                                Text("Some medicines are running low. Tap to refill.", fontSize = 13.sp, color = HealthOrange.copy(alpha = 0.8f))
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Quick Actions
-        item {
-            Text(
-                stringResource(R.string.quick_actions),
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                QuickActionCard(stringResource(R.string.add_medicine), Icons.Default.Add, HealthBlue, Modifier.weight(1f), onAddMedicine)
-                QuickActionCard(stringResource(R.string.log_vitals), Icons.Default.Favorite, HealthRed, Modifier.weight(1f), onAddVital)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                QuickActionCard(stringResource(R.string.medical_vault), Icons.Default.Folder, HealthTeal, Modifier.weight(1f), onViewMedicalRecords)
-                QuickActionCard(stringResource(R.string.symptom_log), Icons.Default.Description, HealthOrange, Modifier.weight(1f), onViewSymptoms)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                QuickActionCard(stringResource(R.string.appointments), Icons.Default.Event, HealthGreen, Modifier.weight(1f), onViewAppointments)
-                QuickActionCard(stringResource(R.string.share_summary), Icons.Default.Share, Color(0xFF673AB7), Modifier.weight(1f), { /* Future implementation */ })
-            }
-        }
+            item { Text(stringResource(R.string.todays_medicines), color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
 
-        // SOS Button
-        item {
-            Card(
-                onClick = {
-                    val intent = Intent(Intent.ACTION_DIAL).apply { data = Uri.parse("tel:112") }
-                    context.startActivity(intent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(90.dp)
-                    .graphicsLayer {
-                        shadowElevation = 4.dp.toPx()
-                        shape = RoundedCornerShape(24.dp)
-                    },
-                colors = CardDefaults.cardColors(containerColor = HealthRedLight),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).clickable {
-                        val gmmIntentUri = Uri.parse("geo:0,0?q=nearest hospital")
-                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                        mapIntent.setPackage("com.google.android.apps.maps")
-                        context.startActivity(mapIntent)
-                    },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text("LIFE-LINE SOS", color = HealthRed, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                        Text("TAP TO NAVIGATE TO NEAREST HOSPITAL", color = HealthRed.copy(alpha = 0.6f), fontSize = 12.sp)
-                    }
-                    Box(
-                        modifier = Modifier.size(50.dp).clip(CircleShape).background(HealthRed),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Navigation, contentDescription = null, tint = Color.White)
+            if (medicines.isEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.no_medicines), color = Color.Gray)
                     }
                 }
+            } else {
+                items(medicines, key = { it.id }) { medicine ->
+                    MedicineStatusItem(
+                        medicine = medicine,
+                        onTakenClick = { viewModel.markAsTaken(medicine); triggerVictory() },
+                        formatter = timeFormatter
+                    )
+                }
             }
-        }
 
-        // Emergency Contact Button
-        item {
-            val emergencyPhone = remember { prefs.getString("emergency_phone", "") ?: "" }
-            val emergencyName = remember { prefs.getString("emergency_name", "") ?: "" }
-            
-            Card(
-                onClick = {
-                    if (emergencyPhone.isNotEmpty()) {
-                        val intent = Intent(Intent.ACTION_DIAL).apply { data = Uri.parse("tel:$emergencyPhone") }
-                        context.startActivity(intent)
+            item {
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Latest Vitals", color = greetingColor, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                        Text("View History", color = HealthBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onAddVital() })
+                    }
+                    
+                    if (latestVital != null) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            VitalSummaryCard("BP", "${latestVital?.systolic}/${latestVital?.diastolic}", "mmHg", HealthRed, Modifier.weight(1f))
+                            VitalSummaryCard("Heart", "${latestVital?.heartRate}", "bpm", HealthBlue, Modifier.weight(1f))
+                            if (latestVital?.sugar != null) {
+                                VitalSummaryCard("Sugar", "${latestVital?.sugar}", "mg/dL", HealthOrange, Modifier.weight(1f))
+                            }
+                        }
                     } else {
-                        onViewSettings()
+                        Card(
+                            modifier = Modifier.fillMaxWidth().height(80.dp).clickable { onAddVital() },
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(24.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f))
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No vitals logged yet. Tap to start.", color = Color.Gray, fontSize = 14.sp)
+                            }
+                        }
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(90.dp)
-                    .graphicsLayer {
-                        shadowElevation = 4.dp.toPx()
-                        shape = RoundedCornerShape(24.dp)
-                    },
-                colors = CardDefaults.cardColors(containerColor = if (emergencyPhone.isNotEmpty()) HealthBlue.copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.1f)),
-                shape = RoundedCornerShape(24.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (emergencyPhone.isNotEmpty()) HealthBlue.copy(alpha = 0.2f) else Color.Gray.copy(alpha = 0.2f))
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                }
+            }
+
+            item {
+                Text(stringResource(R.string.quick_actions), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    QuickActionCard(stringResource(R.string.add_medicine), Icons.Default.Add, HealthBlue, Modifier.weight(1f), onAddMedicine)
+                    QuickActionCard(stringResource(R.string.log_vitals), Icons.Default.Favorite, HealthRed, Modifier.weight(1f), onAddVital)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    QuickActionCard(stringResource(R.string.medical_vault), Icons.Default.Folder, HealthTeal, Modifier.weight(1f), onViewMedicalRecords)
+                    QuickActionCard(stringResource(R.string.symptom_log), Icons.Default.Description, HealthOrange, Modifier.weight(1f), onViewSymptoms)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    QuickActionCard(stringResource(R.string.appointments), Icons.Default.Event, HealthGreen, Modifier.weight(1f), onViewAppointments)
+                    QuickActionCard(stringResource(R.string.share_summary), Icons.Default.Share, Color(0xFF673AB7), Modifier.weight(1f), { /* Share Logic */ })
+                }
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().height(90.dp).graphicsLayer { shadowElevation = 4.dp.toPx(); shape = RoundedCornerShape(24.dp) },
+                    colors = CardDefaults.cardColors(containerColor = HealthRedLight),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Column {
-                        Text(
-                            if (emergencyPhone.isNotEmpty()) "CALL $emergencyName" else "SET EMERGENCY CONTACT", 
-                            color = if (emergencyPhone.isNotEmpty()) HealthBlue else Color.Gray, 
-                            fontSize = 20.sp, 
-                            fontWeight = FontWeight.Black
-                        )
-                        Text(
-                            if (emergencyPhone.isNotEmpty()) "INSTANT CONTACT FOR ASSISTANCE" else "TAP TO CONFIGURE YOUR LIFELINE", 
-                            color = (if (emergencyPhone.isNotEmpty()) HealthBlue else Color.Gray).copy(alpha = 0.6f), 
-                            fontSize = 12.sp
-                        )
-                    }
-                    Box(
-                        modifier = Modifier.size(50.dp).clip(CircleShape).background(if (emergencyPhone.isNotEmpty()) HealthBlue else Color.Gray),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).clickable {
+                            val gmmIntentUri = Uri.parse("geo:0,0?q=nearest hospital")
+                            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply { setPackage("com.google.android.apps.maps") }
+                            context.startActivity(mapIntent)
+                        },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            if (emergencyPhone.isNotEmpty()) Icons.Default.Call else Icons.Default.Settings, 
-                            contentDescription = null, 
-                            tint = Color.White
-                        )
+                        Column {
+                            Text("LIFE-LINE SOS", color = HealthRed, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                            Text("TAP TO NAVIGATE TO NEAREST HOSPITAL", color = HealthRed.copy(alpha = 0.6f), fontSize = 12.sp)
+                        }
+                        Box(modifier = Modifier.size(50.dp).clip(CircleShape).background(HealthRed), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Navigation, contentDescription = null, tint = Color.White)
+                        }
                     }
                 }
             }
+
+            item { Spacer(modifier = Modifier.height(32.dp)) }
         }
 
-        // Trends Link
-        item {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(R.string.view_trends),
-                    color = Color(0xFF2196F3),
-                    modifier = Modifier.clickable { onViewGraph() }.padding(vertical = 8.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-        
-        item { Spacer(modifier = Modifier.height(32.dp)) }
-    }
+        if (showConfetti) { ConfettiOverlay() }
 
-    if (showConfetti) {
-        ConfettiOverlay()
-    }
-
-    if (showAddFamilyDialog) {
-        AddFamilyDialog(
-            onDismiss = { showAddFamilyDialog = false },
-            onSave = { name, phone ->
-                viewModel.addFamilyMember(name, phone)
-                showAddFamilyDialog = false
-                // Auto-Invite SMS
-                try {
-                    val inviteMsg = "Hi $name, I've added you to my Arogya Sahaya care circle. Download the app here to track my health and chat with me: https://arogyasahaya.com/download"
-                    val smsIntent = Intent(Intent.ACTION_VIEW, Uri.parse("sms:$phone")).apply {
-                        putExtra("sms_body", inviteMsg)
-                    }
-                    context.startActivity(smsIntent)
-                } catch (e: Exception) {
-                    // Fallback if SMS intent fails
-                }
-            }
-        )
-    }
-
-    // AI Assistant FAB
-    Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        contentAlignment = Alignment.BottomEnd
-    ) {
-        FloatingActionButton(
-            onClick = { startVoiceAssistant() },
-            containerColor = HealthTeal,
-            contentColor = Color.White,
-            shape = CircleShape,
-            modifier = Modifier.size(64.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.AutoAwesome,
-                contentDescription = "AI Assistant",
-                modifier = Modifier.size(32.dp)
+        if (showAddFamilyDialog) {
+            AddFamilyDialog(
+                onDismiss = { showAddFamilyDialog = false },
+                onSave = { name, phone -> viewModel.addFamilyMember(name, phone); showAddFamilyDialog = false }
             )
         }
+
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomEnd) {
+            FloatingActionButton(onClick = { startVoiceAssistant() }, containerColor = HealthTeal, contentColor = Color.White, shape = CircleShape, modifier = Modifier.size(64.dp)) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", modifier = Modifier.size(32.dp))
+            }
+        }
     }
-}
 }
 
 @Composable
@@ -660,145 +484,33 @@ fun ConfettiOverlay() {
         repeat(50) { index ->
             val infiniteTransition = rememberInfiniteTransition(label = "confetti")
             val yOffset by infiniteTransition.animateFloat(
-                initialValue = -50f,
-                targetValue = 1500f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 1500 + (index * 20), easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "y"
+                initialValue = -50f, targetValue = 1500f,
+                animationSpec = infiniteRepeatable(animation = tween(durationMillis = 1500 + (index * 20), easing = LinearEasing), repeatMode = RepeatMode.Restart), label = "y"
             )
             val xOffset = remember { (0..1000).random().toFloat() }
             val color = remember { colors.random() }
-            
-            Box(
-                modifier = Modifier
-                    .offset(x = xOffset.dp, y = (yOffset/2).dp)
-                    .size(8.dp)
-                    .background(color, CircleShape)
-            )
+            Box(modifier = Modifier.offset(x = xOffset.dp, y = (yOffset/2).dp).size(8.dp).background(color, CircleShape))
         }
     }
 }
 
-@Composable
-fun MedicineStatusItem(medicine: Medicine, onTakenClick: () -> Unit, formatter: SimpleDateFormat) {
-    val timeStr = remember(medicine.time) { formatter.format(Date(medicine.time)) }
-
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-
-    Card(
-        modifier = Modifier.fillMaxWidth().graphicsLayer {
-            shadowElevation = 4.dp.toPx()
-            shape = RoundedCornerShape(20.dp)
-        },
-        colors = CardDefaults.cardColors(
-            containerColor = surfaceColor
-        ),
-        shape = RoundedCornerShape(20.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, onSurfaceColor.copy(alpha = 0.05f))
-    ) {
-        Row(
-            modifier = Modifier.padding(18.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp))
-                    .background(if (medicine.isTaken) HealthGreen.copy(alpha = 0.1f) else HealthBlue.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (medicine.pillImageUri != null) {
-                    AsyncImage(
-                        model = medicine.pillImageUri,
-                        contentDescription = "Pill Photo",
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = if (medicine.isTaken) Icons.Default.CheckCircle else Icons.Default.Medication,
-                        contentDescription = null,
-                        tint = if (medicine.isTaken) HealthGreen else HealthBlue,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = medicine.name,
-                    color = onSurfaceColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.3).sp
-                )
-                Text(
-                    text = "$timeStr · ${medicine.dosage}",
-                    color = onSurfaceColor.copy(alpha = 0.5f),
-                    fontSize = 14.sp
-                )
-            }
-            
-            if (medicine.isTaken) {
-                Icon(Icons.Default.DoneAll, contentDescription = null, tint = HealthGreen, modifier = Modifier.size(24.dp))
-            } else {
-                IconButton(
-                    onClick = onTakenClick,
-                    modifier = Modifier.size(44.dp).clip(CircleShape).background(HealthBlue)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Mark Taken", tint = Color.White)
-                }
-            }
-        }
+fun getIconForName(name: String): ImageVector {
+    return when (name) {
+        "DirectionsWalk" -> Icons.AutoMirrored.Filled.DirectionsWalk
+        "WaterDrop" -> Icons.Default.WaterDrop
+        "Bedtime" -> Icons.Default.Bedtime
+        "Restaurant" -> Icons.Default.Restaurant
+        "SelfImprovement" -> Icons.Default.SelfImprovement
+        "Psychology" -> Icons.Default.Psychology
+        "RemoveRedEye" -> Icons.Default.RemoveRedEye
+        "Person" -> Icons.Default.Person
+        "Groups" -> Icons.Default.Groups
+        "MenuBook" -> Icons.Default.MenuBook
+        "WbSunny" -> Icons.Default.WbSunny
+        "PhonelinkOff" -> Icons.Default.PhonelinkOff
+        else -> Icons.Default.HealthAndSafety
     }
 }
-
-@Composable
-fun HealthScoreWidget(adherence: Float) {
-    val score = (adherence * 100).toInt()
-    val scoreColor = when {
-        score >= 80 -> HealthGreen
-        score >= 50 -> HealthOrange
-        else -> HealthRed
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth().graphicsLayer {
-            shadowElevation = 8.dp.toPx()
-            shape = RoundedCornerShape(28.dp)
-        },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(28.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, scoreColor.copy(alpha = 0.1f))
-    ) {
-        Row(
-            modifier = Modifier.padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { score / 100f },
-                    modifier = Modifier.size(80.dp),
-                    color = scoreColor,
-                    strokeWidth = 10.dp,
-                    trackColor = scoreColor.copy(alpha = 0.1f),
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-                Text(
-                    text = "$score",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Spacer(modifier = Modifier.width(24.dp))
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(HealthGreen))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("LIVE HEALTH SCORE", fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color.Gray, letterSpacing = 1.sp)
-                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = when {

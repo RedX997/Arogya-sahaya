@@ -17,6 +17,9 @@ interface VitalDao {
     @Query("SELECT * FROM vital_table ORDER BY date DESC LIMIT 1")
     suspend fun getLatestVital(): Vital?
 
+    @Query("SELECT * FROM vital_table ORDER BY date DESC")
+    suspend fun getVitalsList(): List<Vital>
+
     @Query("DELETE FROM vital_table")
     suspend fun deleteAll()
 }

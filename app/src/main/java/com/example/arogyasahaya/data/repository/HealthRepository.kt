@@ -5,6 +5,8 @@ import com.example.arogyasahaya.data.local.dao.*
 import com.example.arogyasahaya.data.local.entity.*
 import androidx.lifecycle.asLiveData
 
+import com.example.arogyasahaya.data.remote.ApiService
+
 class HealthRepository(
     private val medicineDao: MedicineDao,
     private val vitalDao: VitalDao,
@@ -12,7 +14,8 @@ class HealthRepository(
     private val appointmentDao: AppointmentDao,
     private val medicalRecordDao: MedicalRecordDao,
     private val familyMemberDao: FamilyMemberDao,
-    private val ashaEventDao: AshaEventDao
+    private val ashaEventDao: AshaEventDao,
+    private val apiService: ApiService
 ) {
     val allMedicines: LiveData<List<Medicine>> = medicineDao.getAllMedicines()
     val allVitals: LiveData<List<Vital>> = vitalDao.getVitals()
@@ -74,5 +77,28 @@ class HealthRepository(
         appointmentDao.deleteAll()
         medicalRecordDao.deleteAll()
         familyMemberDao.deleteAll()
+    }
+
+    // Cloud Sync Methods
+    suspend fun syncVitalsToCloud(userId: String) {
+        val localVitals = vitalDao.getVitalsList() // Assuming this exists or I'll add it
+        localVitals.forEach { vital ->
+            try {
+                apiService.syncVital(vital)
+            } catch (e: Exception) {
+                // Log error or handle retry
+            }
+        }
+    }
+
+    suspend fun fetchVitalsFromCloud(userId: String) {
+        try {
+            val cloudVitals = apiService.getVitals(userId)
+            cloudVitals.forEach { vital ->
+                vitalDao.insert(vital)
+            }
+        } catch (e: Exception) {
+            // Handle error
+        }
     }
 }

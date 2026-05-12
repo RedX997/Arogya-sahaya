@@ -76,7 +76,8 @@ class HealthViewModel(application: Application) : AndroidViewModel(application) 
             database.appointmentDao(),
             database.medicalRecordDao(),
             database.familyMemberDao(),
-            database.ashaEventDao()
+            database.ashaEventDao(),
+            com.example.arogyasahaya.data.remote.NetworkModule.apiService
         )
         allMedicines = repository.allMedicines
         allVitals = repository.allVitals
@@ -254,6 +255,16 @@ class HealthViewModel(application: Application) : AndroidViewModel(application) 
                 .build()
 
             WorkManager.getInstance(getApplication()).enqueue(request)
+        }
+    }
+
+    fun syncWithCloud() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            val userId = "user_123" // Placeholder for real auth
+            repository.syncVitalsToCloud(userId)
+            repository.fetchVitalsFromCloud(userId)
+            _isSyncing.value = false
         }
     }
 
