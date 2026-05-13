@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.arogyasahaya.ui.theme.*
+import com.example.arogyasahaya.data.local.entity.FamilyMember
 
 @Composable
 fun InsightCard(title: String, subtitle: String, icon: ImageVector, color: Color) {
@@ -143,3 +146,4 @@ fun HealthShieldWidget(streakDays: Int) {
         }
     }
 }
+

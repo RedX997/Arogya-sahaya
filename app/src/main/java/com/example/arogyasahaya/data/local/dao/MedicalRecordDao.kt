@@ -9,6 +9,9 @@ interface MedicalRecordDao {
     @Query("SELECT * FROM medical_records ORDER BY date DESC")
     fun getAllRecords(): LiveData<List<MedicalRecord>>
 
+    @Query("SELECT * FROM medical_records ORDER BY date DESC")
+    suspend fun getAllRecordsList(): List<MedicalRecord>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecord(record: MedicalRecord): Long
 

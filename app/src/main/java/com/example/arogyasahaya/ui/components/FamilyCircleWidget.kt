@@ -1,6 +1,7 @@
 package com.example.arogyasahaya.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -8,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ import com.example.arogyasahaya.ui.theme.*
 fun FamilyCircleWidget(
     members: List<FamilyMember>,
     onAddClick: () -> Unit,
+    onInviteClick: () -> Unit,
     onViewChat: () -> Unit
 ) {
     Column {
@@ -62,6 +65,22 @@ fun FamilyCircleWidget(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Member", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // Invite Button
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(HealthGreen.copy(alpha = 0.1f))
+                    .border(1.dp, HealthGreen.copy(alpha = 0.2f), CircleShape)
+                    .clickable { onInviteClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.PersonAdd, contentDescription = "Invite", tint = HealthGreen, modifier = Modifier.size(20.dp))
+                    Text("Invite", fontSize = 9.sp, color = HealthGreen, fontWeight = FontWeight.Bold)
+                }
             }
 
             members.take(4).forEach { member ->

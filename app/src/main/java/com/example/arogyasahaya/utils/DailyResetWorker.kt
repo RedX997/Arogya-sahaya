@@ -16,7 +16,8 @@ class DailyResetWorker(context: Context, params: WorkerParameters) : CoroutineWo
             database.appointmentDao(),
             database.medicalRecordDao(),
             database.familyMemberDao(),
-            database.ashaEventDao()
+            database.ashaEventDao(),
+            com.example.arogyasahaya.data.remote.NetworkModule.apiService
         )
         repository.resetDailyMedicines()
         return Result.success()

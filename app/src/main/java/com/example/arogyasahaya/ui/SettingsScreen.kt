@@ -13,6 +13,7 @@ import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.arogyasahaya.utils.ReminderWorker
+import com.example.arogyasahaya.utils.PreferenceManager
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,6 +47,7 @@ fun SettingsScreen(
     onNavigateToTargets: () -> Unit
 ) {
     val context = LocalContext.current
+    val prefManager = remember { PreferenceManager(context) }
     val prefs = remember { context.getSharedPreferences("settings", Context.MODE_PRIVATE) }
     
     var voiceReminder by remember { mutableStateOf(prefs.getBoolean("voice_reminder", true)) }
@@ -64,10 +66,10 @@ fun SettingsScreen(
     var emergencyName by remember { mutableStateOf(prefs.getString("emergency_name", "") ?: "") }
     var emergencyPhone by remember { mutableStateOf(prefs.getString("emergency_phone", "") ?: "") }
 
-    var profileName by remember { mutableStateOf(prefs.getString("profile_name", "Ramesh Kumar") ?: "Ramesh Kumar") }
-    var profileAge by remember { mutableStateOf(prefs.getString("profile_age", "62") ?: "62") }
-    var profileGender by remember { mutableStateOf(prefs.getString("profile_gender", "Male") ?: "Male") }
-    var profilePhotoUri by remember { mutableStateOf(prefs.getString("profile_photo_uri", "") ?: "") }
+    var profileName by remember { mutableStateOf(prefManager.getUserName()) }
+    var profileAge by remember { mutableStateOf(prefManager.getUserAge()) }
+    var profileGender by remember { mutableStateOf(prefManager.getUserGender()) }
+    var profilePhotoUri by remember { mutableStateOf(prefManager.getUserPhoto()) }
 
     var showEditProfile by remember { mutableStateOf(false) }
 
@@ -83,13 +85,7 @@ fun SettingsScreen(
                 profileAge = age
                 profileGender = gender
                 profilePhotoUri = photoUri
-                prefs.edit().apply {
-                    putString("profile_name", name)
-                    putString("profile_age", age)
-                    putString("profile_gender", gender)
-                    putString("profile_photo_uri", photoUri)
-                    apply()
-                }
+                prefManager.saveProfileData(name, age, gender, photoUri)
                 showEditProfile = false
             }
         )
@@ -171,7 +167,7 @@ fun SettingsScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 val initials = profileName.split(" ").mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
-                                Text(if (initials.isNotEmpty()) initials else "RK", color = Color(0xFF81C784), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text(if (initials.isNotEmpty()) initials else "NU", color = Color(0xFF81C784), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
@@ -678,4 +674,3 @@ fun InputDialog(
         }
     )
 }
-

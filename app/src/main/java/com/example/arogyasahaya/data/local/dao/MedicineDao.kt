@@ -21,7 +21,7 @@ interface MedicineDao {
     fun getAllMedicines(): LiveData<List<Medicine>>
 
     @Query("SELECT * FROM medicine_table")
-    suspend fun getAllMedicinesSync(): List<Medicine>
+    suspend fun getAllMedicinesList(): List<Medicine>
 
     @Query("SELECT * FROM medicine_table WHERE id = :id")
     suspend fun getMedicineById(id: Int): Medicine?

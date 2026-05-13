@@ -63,15 +63,41 @@ fun HomeScreen(
     onViewSymptoms: () -> Unit,
     onViewSettings: () -> Unit,
     onViewMedicalRecords: () -> Unit,
-    onViewChat: () -> Unit
+    onViewChat: () -> Unit,
+    onViewAshaConnect: () -> Unit,
+    onViewCaregiver: () -> Unit
 ) {
     val medicines by viewModel.allMedicines.observeAsState(initial = emptyList())
     val familyMembers by viewModel.allFamilyMembers.observeAsState(initial = emptyList())
     val latestVital by viewModel.latestVital.observeAsState()
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
-    val profileName = remember { prefs.getString("profile_name", "Ramesh Kumar") ?: "Ramesh Kumar" }
+    val prefManager = remember { PreferenceManager(context) }
+    val profileName = prefManager.getUserName()
     val firstName = profileName.split(" ").firstOrNull() ?: profileName
+    
+    var showGuestPopup by remember { mutableStateOf(prefManager.isGuest()) }
+
+    if (showGuestPopup) {
+        AlertDialog(
+            onDismissRequest = { showGuestPopup = false },
+            title = { Text("Demo Mode Active") },
+            text = { Text("You are currently using the app as a Guest. Your health data is being stored locally for demo purposes only and will NOT be synced to the cloud.\n\nTo save your data permanently and view it on other devices, please Sign Up or Log In.") },
+            confirmButton = {
+                Button(onClick = { showGuestPopup = false }) {
+                    Text("Continue Demo")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showGuestPopup = false
+                    viewModel.logout()
+                    onViewSettings() // This will navigate to settings/login eventually if we handle logout
+                }) {
+                    Text("Sign Up Now")
+                }
+            }
+        )
+    }
 
     val takenCount = medicines.count { it.isTaken }
     val totalCount = medicines.size
@@ -114,8 +140,33 @@ fun HomeScreen(
                 mapIntent.setPackage("com.google.android.apps.maps")
                 context.startActivity(mapIntent)
             }
+            AssistantAction.CheckHealthScore -> {
+                val score = viewModel.healthScore.value ?: 0f
+                ArogyaAssistant.speak("Your health score is currently ${score.toInt()} out of 100. ${if(score > 80) "You are doing great!" else "Keep taking your medicines on time to improve it."}")
+            }
+            AssistantAction.QueryEvents -> {
+                val events = viewModel.allAshaEvents.value ?: emptyList()
+                if (events.isEmpty()) {
+                    ArogyaAssistant.speak("There are no upcoming health events scheduled at the moment.")
+                } else {
+                    val event = events.first()
+                    ArogyaAssistant.speak("The next event is ${event.title} at ${event.location}. Would you like to join?")
+                    onViewAshaConnect()
+                }
+            }
+            AssistantAction.AttendPolio -> {
+                val events = viewModel.allAshaEvents.value ?: emptyList()
+                val polioEvent = events.find { it.title.lowercase().contains("polio") }
+                if (polioEvent != null) {
+                    viewModel.updateAshaEventStatus(polioEvent, "ATTENDING")
+                    ArogyaAssistant.speak("Great! I've marked you as attending the Polio drive.")
+                } else {
+                    ArogyaAssistant.speak("I couldn't find a Polio drive in the schedule, but I'm opening the events calendar for you.")
+                    onViewAshaConnect()
+                }
+            }
             AssistantAction.Unknown -> {
-                ArogyaAssistant.speak("I'm sorry, I didn't understand that. You can say log B P, or open my medicines.")
+                ArogyaAssistant.speak("I'm sorry, I didn't understand that. You can say log B P, check my health score, or are there any camps.")
             }
         }
     }
@@ -130,14 +181,7 @@ fun HomeScreen(
         }
     }
 
-    fun startVoiceAssistant() {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "How can I help you today?")
-        }
-        speechLauncher.launch(intent)
-    }
+    // Removed manual startVoiceAssistant as it's now in MainActivity FAB
     
     val currentHour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     val colorScheme = MaterialTheme.colorScheme
@@ -147,11 +191,11 @@ fun HomeScreen(
         if (isDark) {
             Brush.verticalGradient(listOf(Color(0xFF121212), Color(0xFF1A1A1A)))
         } else {
+            // Light Theme: Always keep it light/white as per user request
             when {
                 currentHour in 5..10 -> Brush.verticalGradient(listOf(Color(0xFFFFFDE7), Color(0xFFFFFFFF))) // Morning
                 currentHour in 17..20 -> Brush.verticalGradient(listOf(Color(0xFFF3E5F5), Color(0xFFFFFFFF))) // Evening
-                currentHour > 20 || currentHour < 5 -> Brush.verticalGradient(listOf(Color(0xFF121212), Color(0xFF1A1A1A))) // Night
-                else -> Brush.verticalGradient(listOf(Color(0xFFF0F7FF), Color(0xFFFFFFFF))) // Day
+                else -> Brush.verticalGradient(listOf(Color(0xFFF8F9FA), Color(0xFFFFFFFF))) // Default light
             }
         }
     }
@@ -293,13 +337,6 @@ fun HomeScreen(
                 HealthScoreWidget(adherence = score / 100f)
             }
 
-            item {
-                FamilyCircleWidget(
-                    members = familyMembers,
-                    onAddClick = { showAddFamilyDialog = true },
-                    onViewChat = onViewChat
-                )
-            }
 
             // Adherence Card
             item {
@@ -383,6 +420,17 @@ fun HomeScreen(
             }
 
             item {
+                FamilyCircleWidget(
+                    members = familyMembers,
+                    onAddClick = { showAddFamilyDialog = true },
+                    onInviteClick = { com.example.arogyasahaya.utils.ShareHelper.shareAppInvite(context) },
+                    onViewChat = { onViewChat() }
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+
+            item {
                 Column {
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Latest Vitals", color = greetingColor, fontSize = 20.sp, fontWeight = FontWeight.Black)
@@ -416,8 +464,13 @@ fun HomeScreen(
                 Text(stringResource(R.string.quick_actions), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 8.dp))
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    QuickActionCard(stringResource(R.string.add_medicine), Icons.Default.Add, HealthBlue, Modifier.weight(1f), onAddMedicine)
+                    QuickActionCard(stringResource(R.string.asha_connect), Icons.Default.Groups, Color(0xFF1976D2), Modifier.weight(1f), onViewAshaConnect)
+                    QuickActionCard("Caregiver View", Icons.Default.AdminPanelSettings, Color(0xFF455A64), Modifier.weight(1f), onViewCaregiver)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     QuickActionCard(stringResource(R.string.log_vitals), Icons.Default.Favorite, HealthRed, Modifier.weight(1f), onAddVital)
+                    QuickActionCard(stringResource(R.string.add_medicine), Icons.Default.AddCircle, HealthBlue, Modifier.weight(1f), onAddMedicine)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -427,8 +480,12 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     QuickActionCard(stringResource(R.string.appointments), Icons.Default.Event, HealthGreen, Modifier.weight(1f), onViewAppointments)
-                    QuickActionCard(stringResource(R.string.share_summary), Icons.Default.Share, Color(0xFF673AB7), Modifier.weight(1f), { /* Share Logic */ })
+                    val score by viewModel.healthScore.observeAsState(initial = 85f)
+                    QuickActionCard(stringResource(R.string.share_summary), Icons.Default.Share, Color(0xFF673AB7), Modifier.weight(1f), { 
+                        ShareHelper.shareHealthSummary(context, profileName, score.toInt())
+                    })
                 }
+                // End of actions
             }
 
             item {
@@ -468,12 +525,6 @@ fun HomeScreen(
                 onSave = { name, phone -> viewModel.addFamilyMember(name, phone); showAddFamilyDialog = false }
             )
         }
-
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomEnd) {
-            FloatingActionButton(onClick = { startVoiceAssistant() }, containerColor = HealthTeal, contentColor = Color.White, shape = CircleShape, modifier = Modifier.size(64.dp)) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = "AI Assistant", modifier = Modifier.size(32.dp))
-            }
-        }
     }
 }
 
@@ -511,150 +562,6 @@ fun getIconForName(name: String): ImageVector {
         else -> Icons.Default.HealthAndSafety
     }
 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = when {
-                        score >= 80 -> "Excellent Health State"
-                        score >= 50 -> "Keep Following Routine"
-                        else -> "Needs Attention"
-                    },
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = scoreColor
-                )
-                Text(
-                    "Reflects medication and recent vitals",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun InsightCard(title: String, subtitle: String, icon: ImageVector, color: Color) {
-    Card(
-        modifier = Modifier.width(220.dp).height(130.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(2.dp, color.copy(alpha = 0.2f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    title, 
-                    fontWeight = FontWeight.ExtraBold, 
-                    fontSize = 15.sp, 
-                    color = MaterialTheme.colorScheme.onSurface,
-                    letterSpacing = (-0.5).sp
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                subtitle, 
-                fontSize = 12.sp, 
-                lineHeight = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-fun getIconForName(name: String): ImageVector {
-    return when (name) {
-        "WaterDrop" -> Icons.Default.WaterDrop
-        "DirectionsWalk" -> Icons.AutoMirrored.Filled.DirectionsWalk
-        "Favorite" -> Icons.Default.Favorite
-        "Bedtime" -> Icons.Default.Bedtime
-        "Psychology" -> Icons.Default.Psychology
-        "SelfImprovement" -> Icons.Default.SelfImprovement
-        "Restaurant" -> Icons.Default.Restaurant
-        else -> Icons.Default.Lightbulb
-    }
-}
-
-@Composable
-fun FamilyCircleWidget(
-    members: List<com.example.arogyasahaya.data.local.entity.FamilyMember>, 
-    onAddClick: () -> Unit,
-    onViewChat: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onViewChat() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-    ) {
-        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Family Circle", fontWeight = FontWeight.Black, fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text(
-                    if (members.isEmpty()) "No one is watching over you yet" else "${members.size} people are watching over you", 
-                    fontSize = 12.sp, 
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                members.take(3).forEach { member ->
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(HealthBlue.copy(alpha = 0.2f))
-                            .border(2.dp, Color.White, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            member.name.take(1).uppercase(),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = HealthBlue
-                        )
-                    }
-                    Spacer(modifier = Modifier.width((-8).dp))
-                }
-                
-                IconButton(onClick = onViewChat) {
-                    Icon(Icons.Default.Chat, contentDescription = "Chat", tint = HealthGreen, modifier = Modifier.size(26.dp))
-                }
-                
-                IconButton(onClick = onAddClick) {
-                    Icon(Icons.Default.AddCircle, contentDescription = "Add", tint = HealthBlue, modifier = Modifier.size(28.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun VitalSummaryCard(label: String, value: String, unit: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.height(100.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.15f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(label, color = color, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-            Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black, fontSize = 18.sp)
-            Text(unit, color = Color.Gray, fontSize = 10.sp)
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -662,13 +569,20 @@ fun AddFamilyDialog(onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
 
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(
-                onClick = { if (name.isNotEmpty() && phone.isNotEmpty()) onSave(name, phone) },
-                enabled = name.isNotEmpty() && phone.isNotEmpty()
-            ) { Text("Add Member") }
+            Row {
+                TextButton(
+                    onClick = { if (name.isNotEmpty() && phone.isNotEmpty()) { onSave(name, phone); ShareHelper.sendSmsInvite(context, phone) } },
+                    enabled = name.isNotEmpty() && phone.isNotEmpty()
+                ) { Text("Save & Invite") }
+                TextButton(
+                    onClick = { if (name.isNotEmpty() && phone.isNotEmpty()) onSave(name, phone) },
+                    enabled = name.isNotEmpty() && phone.isNotEmpty()
+                ) { Text("Save Only") }
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -697,110 +611,4 @@ fun AddFamilyDialog(onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
         },
         shape = RoundedCornerShape(28.dp)
     )
-}
-
-@Composable
-fun QuickActionCard(
-    title: String,
-    icon: ImageVector,
-    color: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.height(115.dp).graphicsLayer {
-            shadowElevation = 6.dp.toPx()
-            shape = RoundedCornerShape(24.dp)
-        },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(color.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                title,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                letterSpacing = (-0.2).sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-fun HealthShieldWidget(streakDays: Int) {
-    val shieldColor = when {
-        streakDays >= 14 -> Color(0xFFFFD700) // Gold
-        streakDays >= 7 -> Color(0xFFC0C0C0) // Silver
-        else -> Color(0xFFCD7F32) // Bronze
-    }
-    
-    val infiniteTransition = rememberInfiniteTransition(label = "shield_glow")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glow"
-    )
-
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(2.dp, shieldColor.copy(alpha = 0.3f))
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                // Glow effect
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(shieldColor.copy(alpha = glowAlpha), CircleShape)
-                )
-                Icon(
-                    imageVector = Icons.Default.Shield,
-                    contentDescription = null,
-                    tint = shieldColor,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(20.dp))
-            Column {
-                Text(
-                    "$streakDays Day Health Streak!",
-                    fontWeight = FontWeight.Black,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    "Your Health Shield is getting stronger.",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
-        }
-    }
 }

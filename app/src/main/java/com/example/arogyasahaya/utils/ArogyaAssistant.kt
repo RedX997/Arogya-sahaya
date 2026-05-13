@@ -39,6 +39,9 @@ object ArogyaAssistant {
             cmd.contains("vault") || cmd.contains("record") || cmd.contains("file") -> AssistantAction.Navigate("vault")
             cmd.contains("appointment") || cmd.contains("doctor") -> AssistantAction.Navigate("appointments")
             cmd.contains("sos") || cmd.contains("emergency") || cmd.contains("help") -> AssistantAction.Emergency
+            cmd.contains("health score") || cmd.contains("my status") || cmd.contains("how am i") -> AssistantAction.CheckHealthScore
+            cmd.contains("camp") || cmd.contains("event") || cmd.contains("asha") -> AssistantAction.QueryEvents
+            (cmd.contains("attend") || cmd.contains("joining")) && (cmd.contains("polio") || cmd.contains("drive") || cmd.contains("camp")) -> AssistantAction.AttendPolio
             else -> AssistantAction.Unknown
         }
     }
@@ -54,5 +57,8 @@ sealed class AssistantAction {
     data class LogBP(val sys: Int, val dia: Int) : AssistantAction()
     data class Navigate(val destination: String) : AssistantAction()
     object Emergency : AssistantAction()
+    object CheckHealthScore : AssistantAction()
+    object QueryEvents : AssistantAction()
+    object AttendPolio : AssistantAction()
     object Unknown : AssistantAction()
 }

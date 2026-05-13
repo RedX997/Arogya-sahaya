@@ -17,6 +17,9 @@ coil = "2.6.0"
 firebaseDatabase = "21.0.0"
 lottie = "6.4.0"
 retrofit = "2.9.0"
+firebaseFirestore = "25.1.1"
+jsoup = "1.18.1"
+calendar = "2.6.0"
 
 [libraries]
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
@@ -56,6 +59,9 @@ mpandroidchart = { group = "com.github.PhilJay", name = "MPAndroidChart", versio
 
 # Coil
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestore" }
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+calendar-compose = { group = "com.kizitonwose.calendar", name = "compose", version.ref = "calendar" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

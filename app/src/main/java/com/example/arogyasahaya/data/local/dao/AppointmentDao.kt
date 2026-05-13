@@ -15,6 +15,9 @@ interface AppointmentDao {
     @Query("SELECT * FROM appointment_table ORDER BY dateTime ASC")
     fun getAllAppointments(): LiveData<List<Appointment>>
 
+    @Query("SELECT * FROM appointment_table ORDER BY dateTime ASC")
+    suspend fun getAllAppointmentsList(): List<Appointment>
+
     @Query("SELECT * FROM appointment_table WHERE dateTime >= :currentTime ORDER BY dateTime ASC")
     fun getUpcomingAppointments(currentTime: Long): LiveData<List<Appointment>>
 

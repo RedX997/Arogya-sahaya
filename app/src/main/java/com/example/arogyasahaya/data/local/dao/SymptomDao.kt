@@ -11,8 +11,14 @@ interface SymptomDao {
     @Insert
     suspend fun insert(symptom: Symptom): Long
 
+    @androidx.room.Delete
+    suspend fun delete(symptom: Symptom)
+
     @Query("SELECT * FROM symptom_table ORDER BY date DESC")
     fun getAllSymptoms(): LiveData<List<Symptom>>
+
+    @Query("SELECT * FROM symptom_table ORDER BY date DESC")
+    suspend fun getAllSymptomsList(): List<Symptom>
 
     @Query("SELECT * FROM symptom_table WHERE date >= :since ORDER BY date DESC")
     fun getRecentSymptoms(since: Long): LiveData<List<Symptom>>

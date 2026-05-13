@@ -21,4 +21,16 @@ object NotificationHelper {
             notificationManager.createNotificationChannel(channel)
         }
     }
+
+    fun showNotification(context: Context, title: String, content: String) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val builder = androidx.core.app.NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+        
+        notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+    }
 }

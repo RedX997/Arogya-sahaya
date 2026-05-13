@@ -18,7 +18,7 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val db = AppDatabase.getDatabase(context)
             CoroutineScope(Dispatchers.IO).launch {
-                val medicines = db.medicineDao().getAllMedicinesSync()
+                val medicines = db.medicineDao().getAllMedicinesList()
                 medicines.forEach { medicine ->
                     if (!medicine.isTaken) {
                         scheduleReminder(context, medicine)

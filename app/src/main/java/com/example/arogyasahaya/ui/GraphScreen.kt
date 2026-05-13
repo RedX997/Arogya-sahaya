@@ -52,22 +52,8 @@ fun GraphScreen(
     val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
     val firstName = (prefs.getString("profile_name", "Ramesh Kumar") ?: "Ramesh Kumar").split(" ").first()
 
-    val avgSys = if (vitals.isNotEmpty()) vitals.map { it.systolic }.average().toInt() else 0
-    val avgDia = if (vitals.isNotEmpty()) vitals.map { it.diastolic }.average().toInt() else 0
-    val avgHr = if (vitals.isNotEmpty()) vitals.map { it.heartRate }.average().toInt() else 0
-    val avgSugar = if (vitals.isNotEmpty()) vitals.filter { it.sugar != null }.map { it.sugar!! }.average().toInt() else 0
-    
-    val bpTrend = remember(vitals) {
-        if (vitals.size >= 3) {
-            val last3 = vitals.takeLast(3)
-            val diff = last3.last().systolic - last3.first().systolic
-            when {
-                diff > 10 -> "RISING"
-                diff < -10 -> "IMPROVING"
-                else -> "STABLE"
-            }
-        } else "NOT_ENOUGH_DATA"
-    }
+    val trends by viewModel.sevenDayTrends.observeAsState(initial = HealthViewModel.HealthTrends(0,0,0,0,"STABLE", "STABLE"))
+    val bpTrend = trends.bpStatus
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -93,9 +79,9 @@ fun GraphScreen(
         ) {
             // Stats Row
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(stringResource(R.string.avg_bp), "$avgSys/$avgDia", HealthRed, HealthRedLight, Modifier.weight(1f))
-                StatCard(stringResource(R.string.avg_hr), "$avgHr bpm", HealthBlue, HealthBlueLight, Modifier.weight(1f))
-                StatCard(stringResource(R.string.avg_sugar), if (avgSugar > 0) "$avgSugar" else "--", HealthOrange, HealthOrangeLight, Modifier.weight(1f))
+                StatCard(stringResource(R.string.avg_bp), "${trends.avgSystolic}/${trends.avgDiastolic}", HealthRed, HealthRedLight, Modifier.weight(1f))
+                StatCard(stringResource(R.string.avg_hr), "${trends.avgHeartRate} bpm", HealthBlue, HealthBlueLight, Modifier.weight(1f))
+                StatCard(stringResource(R.string.avg_sugar), if (trends.avgSugar > 0) "${trends.avgSugar}" else "--", HealthOrange, HealthOrangeLight, Modifier.weight(1f))
             }
 
             // Chart
@@ -177,72 +163,51 @@ fun GraphScreen(
                 }
             }
 
-            // Predictive Health Card
-            if (bpTrend != "NOT_ENOUGH_DATA") {
+            // AI Health Summary Report
+            if (vitals.isNotEmpty()) {
+                val sugarTrend = trends.sugarStatus
+                
+                val reportText = remember(bpTrend, sugarTrend) {
+                    val bpText = when(bpTrend) {
+                        "RISING" -> "Your blood pressure has been rising recently. Please reduce salt intake, manage stress, and consult your doctor if it remains high."
+                        "IMPROVING" -> "Your blood pressure is improving towards a healthier range. Keep following your current routine!"
+                        else -> "Your blood pressure is currently stable."
+                    }
+                    val sugarText = when(sugarTrend) {
+                        "RISING" -> "Your blood sugar levels are increasing. Consider cutting back on sweets and refined carbs."
+                        "IMPROVING" -> "Your blood sugar levels are dropping. Great job maintaining your diet!"
+                        else -> "Your blood sugar levels are stable."
+                    }
+                    "Hello $firstName. Here is your health summary: $bpText $sugarText"
+                }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = when(bpTrend) {
-                            "RISING" -> HealthRedLight
-                            "IMPROVING" -> HealthGreen.copy(alpha = 0.1f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        }
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp, 
-                        when(bpTrend) {
-                            "RISING" -> HealthRed.copy(alpha = 0.2f)
-                            "IMPROVING" -> HealthGreen.copy(alpha = 0.2f)
-                            else -> Color.Transparent
-                        }
-                    )
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                 ) {
-                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier.size(40.dp).clip(CircleShape).background(
-                                when(bpTrend) {
-                                    "RISING" -> HealthRed
-                                    "IMPROVING" -> HealthGreen
-                                    else -> Color.Gray
-                                }
-                            ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                if (bpTrend == "RISING") Icons.Default.TrendingUp else if (bpTrend == "IMPROVING") Icons.Default.TrendingDown else Icons.Default.HorizontalRule,
-                                contentDescription = null, 
-                                tint = Color.White, 
-                                modifier = Modifier.size(20.dp)
-                            )
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = HealthBlue, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("AI HEALTH SUMMARY", fontWeight = FontWeight.Black, color = HealthBlue, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                            
+                            IconButton(
+                                onClick = { com.example.arogyasahaya.utils.ArogyaAssistant.speak(reportText) },
+                                modifier = Modifier.size(36.dp).background(HealthBlue.copy(alpha = 0.1f), CircleShape)
+                            ) {
+                                Icon(Icons.Default.VolumeUp, contentDescription = "Read Aloud", tint = HealthBlue, modifier = Modifier.size(20.dp))
+                            }
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = when(bpTrend) {
-                                    "RISING" -> "PREDICTIVE ALERT: BP RISING"
-                                    "IMPROVING" -> "HEALTH STATUS: IMPROVING"
-                                    else -> "HEALTH STATUS: STABLE"
-                                },
-                                fontWeight = FontWeight.Black, 
-                                color = when(bpTrend) {
-                                    "RISING" -> HealthRed
-                                    "IMPROVING" -> HealthGreen
-                                    else -> Color.Gray
-                                }, 
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = when(bpTrend) {
-                                    "RISING" -> "Your blood pressure has trended upwards recently. We recommend checking again later and consulting your doctor if it remains high."
-                                    "IMPROVING" -> "Your readings are trending downwards towards a healthier range. Keep it up!"
-                                    else -> "Your health readings are steady. Consistency is key!"
-                                },
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                lineHeight = 16.sp
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = reportText,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
@@ -332,6 +297,35 @@ fun GraphScreen(
                 }
             }
 
+            // Adherence & Vitals Correlation
+            val adherenceRate = if (medicines.isNotEmpty()) (medicines.count { it.isTaken }.toFloat() / medicines.size * 100).toInt() else 0
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = HealthTeal.copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(20.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, HealthTeal.copy(alpha = 0.2f))
+            ) {
+                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(HealthTeal),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Assessment, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text("ADHERENCE CORRELATION", fontWeight = FontWeight.Black, color = HealthTeal, fontSize = 14.sp)
+                        Text(
+                            text = if (adherenceRate > 80) "High adherence ($adherenceRate%) is stabilizing your vitals." 
+                                   else "Low adherence ($adherenceRate%) may be causing fluctuations in your readings.",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+
             // Insights
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -383,7 +377,7 @@ fun GraphScreen(
                 Button(
                     onClick = {
                         val reportFor = context.getString(R.string.health_report_for, firstName)
-                        val shareText = "$reportFor\n${context.getString(R.string.avg_bp)}: ${avgSys}/${avgDia}\n${context.getString(R.string.avg_hr)}: $avgHr bpm\n${context.getString(R.string.avg_sugar)}: $avgSugar\nGenerated by Arogya Sahaya"
+                        val shareText = "$reportFor\n${context.getString(R.string.avg_bp)}: ${trends.avgSystolic}/${trends.avgDiastolic}\n${context.getString(R.string.avg_hr)}: ${trends.avgHeartRate} bpm\n${context.getString(R.string.avg_sugar)}: ${trends.avgSugar}\nGenerated by Arogya Sahaya"
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, shareText)
@@ -397,6 +391,17 @@ fun GraphScreen(
                 ) {
                     Text(stringResource(R.string.share_whatsapp), color = Color.White)
                 }
+            }
+            
+            Button(
+                onClick = { CsvExportHelper.exportVitalsToCsv(context, vitals, firstName) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Export CSV for Doctor")
             }
         }
     }

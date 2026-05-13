@@ -8,7 +8,7 @@ import com.example.arogyasahaya.data.local.entity.*
 import com.example.arogyasahaya.data.local.dao.*
 import com.example.arogyasahaya.data.local.dao.AshaEventDao
 
-@Database(entities = [Medicine::class, Vital::class, Symptom::class, Appointment::class, MedicalRecord::class, FamilyMember::class, AshaEvent::class], version = 7, exportSchema = false)
+@Database(entities = [Medicine::class, Vital::class, Symptom::class, Appointment::class, MedicalRecord::class, FamilyMember::class, AshaEvent::class], version = 10, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun medicineDao(): MedicineDao

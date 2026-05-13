@@ -78,6 +78,9 @@ dependencies {
     // Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
+    implementation(libs.firebase.firestore)
+    implementation(libs.jsoup)
+    implementation(libs.calendar.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

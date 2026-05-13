@@ -307,16 +307,20 @@ fun AddMedicineScreen(
 
             Button(
                 onClick = {
-                    if (name.isNotBlank() && dosage.isNotBlank()) {
+                    if (name.isNotBlank()) {
+                        val finalDosage = if (dosage.isNotBlank()) dosage else "As prescribed"
                         viewModel.addMedicine(
                             name = name,
-                            dosage = dosage,
+                            dosage = finalDosage,
                             time = selectedTime.timeInMillis,
                             totalTablets = totalTablets.toIntOrNull() ?: 30,
                             frequency = frequency,
                             pillImageUri = pillImageUri
                         )
+                        android.widget.Toast.makeText(context, "Medicine saved successfully", android.widget.Toast.LENGTH_SHORT).show()
                         onBack()
+                    } else {
+                        android.widget.Toast.makeText(context, "Please enter the medicine name", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier

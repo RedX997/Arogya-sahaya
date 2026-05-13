@@ -252,11 +252,11 @@ fun AddRecordDialog(onDismiss: () -> Unit, onSave: (String, String, String, Stri
         confirmButton = {
             TextButton(
                 onClick = { 
-                    if (title.isNotEmpty() && fileUri != null) {
-                        onSave(title, category, fileUri.toString(), notes)
+                    if (title.isNotEmpty()) {
+                        onSave(title, category, fileUri?.toString() ?: "", notes)
                     }
                 },
-                enabled = title.isNotEmpty() && fileUri != null
+                enabled = title.isNotEmpty()
             ) {
                 Text(stringResource(R.string.save))
             }

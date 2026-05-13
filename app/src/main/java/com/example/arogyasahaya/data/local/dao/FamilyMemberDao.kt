@@ -9,6 +9,9 @@ interface FamilyMemberDao {
     @Query("SELECT * FROM family_members ORDER BY dateAdded DESC")
     fun getAllFamilyMembers(): LiveData<List<FamilyMember>>
 
+    @Query("SELECT * FROM family_members ORDER BY dateAdded DESC")
+    suspend fun getAllFamilyMembersList(): List<FamilyMember>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(member: FamilyMember)
 

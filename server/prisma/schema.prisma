@@ -17,6 +17,9 @@ model User {
   password  String
   vitals    Vital[]
   medicines Medicine[]
+  symptoms  Symptom[]
+  records   MedicalRecord[]
+  appointments Appointment[]
   family    FamilyMember[]
   createdAt DateTime   @default(now())
 }
@@ -40,10 +43,44 @@ model Medicine {
   name             String
   dosage           String
   time             DateTime
+  totalTablets     Int      @default(30)
   remainingTablets Int
+  frequency        String   @default("Daily")
   isTaken          Boolean  @default(false)
   pillImageUri     String?
   createdAt        DateTime @default(now())
+}
+
+model Symptom {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime @default(now())
+  notes     String
+  tags      String   // Comma separated tags
+  createdAt DateTime @default(now())
+}
+
+model MedicalRecord {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  category  String
+  date      DateTime @default(now())
+  fileUri   String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  doctorName String
+  dateTime   DateTime
+  notes      String?
+  createdAt  DateTime @default(now())
 }
 
 model FamilyMember {
@@ -52,5 +89,19 @@ model FamilyMember {
   user        User   @relation(fields: [userId], references: [id])
   name        String
   phoneNumber String
-  role        String @default("CAREGIVER")
+  relation    String @default("Family")
+}
+
+model AshaEvent {
+  id          String   @id @default(uuid())
+  title       String
+  date        BigInt
+  location    String
+  description String
+  type        String
+  latitude    Float?
+  longitude   Float?
+  time        String?
+  organizer   String?
+  createdAt   DateTime @default(now())
 }

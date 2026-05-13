@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.arogyasahaya.R
+import com.example.arogyasahaya.utils.PreferenceManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,18 +29,44 @@ fun ProfileScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("settings", Context.MODE_PRIVATE) }
+    val prefManager = remember { PreferenceManager(context) }
+    val settingsPrefs = remember { context.getSharedPreferences("settings", Context.MODE_PRIVATE) }
     
-    var darkMode by remember { mutableStateOf(prefs.getBoolean("dark_mode", false)) }
-    var appLanguage by remember { mutableStateOf(prefs.getString("app_language", "English") ?: "English") }
+    var darkMode by remember { mutableStateOf(settingsPrefs.getBoolean("dark_mode", false)) }
+    var appLanguage by remember { mutableStateOf(settingsPrefs.getString("app_language", "English") ?: "English") }
     
-    var fullName by remember { mutableStateOf(prefs.getString("profile_name", "Nikita R") ?: "Nikita R") }
-    var age by remember { mutableStateOf(prefs.getString("profile_age", "65") ?: "65") }
-    var chronicConditions by remember { mutableStateOf(prefs.getString("chronic_conditions", "Cold & Cough") ?: "Cold & Cough") }
-    var bloodGroup by remember { mutableStateOf(prefs.getString("blood_group", "—") ?: "—") }
-    
-    var emergencyName by remember { mutableStateOf(prefs.getString("emergency_name", "Papa") ?: "Papa") }
-    var emergencyPhone by remember { mutableStateOf(prefs.getString("emergency_phone", "9972259921") ?: "9972259921") }
+    var fullName by remember { mutableStateOf(prefManager.getUserName()) }
+    var userEmail by remember { mutableStateOf(prefManager.getUserEmail()) }
+    var age by remember { mutableStateOf(prefManager.getUserAge()) }
+    var chronicConditions by remember { mutableStateOf(prefManager.getChronicConditions()) }
+    var bloodGroup by remember { mutableStateOf(prefManager.getBloodGroup()) }
+    var emergencyName by remember { mutableStateOf(prefManager.getEmergencyName()) }
+    var emergencyPhone by remember { mutableStateOf(prefManager.getEmergencyPhone()) }
+    var photoUri by remember { mutableStateOf(prefManager.getUserPhoto()) }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        FullEditProfileDialog(
+            currentName = fullName,
+            currentAge = age,
+            currentChronic = chronicConditions,
+            currentBlood = bloodGroup,
+            currentEmName = emergencyName,
+            currentEmPhone = emergencyPhone,
+            onDismiss = { showEditDialog = false },
+            onSave = { name, a, chronic, blood, emName, emPhone ->
+                fullName = name
+                age = a
+                chronicConditions = chronic
+                bloodGroup = blood
+                emergencyName = emName
+                emergencyPhone = emPhone
+                prefManager.saveProfileData(name, a, prefManager.getUserGender(), photoUri, chronic, blood, emName, emPhone)
+                showEditDialog = false
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -52,7 +79,7 @@ fun ProfileScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { onBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -73,7 +100,7 @@ fun ProfileScreen(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    stringResource(R.string.logged_in_as, "xyz@gmail.com"),
+                    stringResource(R.string.logged_in_as, userEmail),
                     modifier = Modifier.padding(12.dp),
                     color = Color(0xFF1976D2),
                     fontSize = 14.sp
@@ -97,7 +124,7 @@ fun ProfileScreen(
                     checked = darkMode,
                     onCheckedChange = { 
                         darkMode = it
-                        prefs.edit().putBoolean("dark_mode", it).apply()
+                        settingsPrefs.edit().putBoolean("dark_mode", it).apply()
                     },
                     colors = SwitchDefaults.colors(
                         checkedTrackColor = Color(0xFF1976D2)
@@ -132,7 +159,7 @@ fun ProfileScreen(
                             text = { Text(selectionOption) },
                             onClick = {
                                 appLanguage = selectionOption
-                                prefs.edit().putString("app_language", selectionOption).apply()
+                                settingsPrefs.edit().putString("app_language", selectionOption).apply()
                                 expanded = false
                             }
                         )
@@ -168,7 +195,7 @@ fun ProfileScreen(
 
             // Buttons
             Button(
-                onClick = { /* Handle Edit */ },
+                onClick = { showEditDialog = true },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
@@ -179,7 +206,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = onLogout,
+                onClick = { onLogout() },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
@@ -205,4 +232,53 @@ fun ProfileField(label: String, value: String) {
             shape = RoundedCornerShape(8.dp)
         )
     }
+}
+
+@Composable
+fun FullEditProfileDialog(
+    currentName: String,
+    currentAge: String,
+    currentChronic: String,
+    currentBlood: String,
+    currentEmName: String,
+    currentEmPhone: String,
+    onDismiss: () -> Unit,
+    onSave: (name: String, age: String, chronic: String, blood: String, emName: String, emPhone: String) -> Unit
+) {
+    var name by remember { mutableStateOf(currentName) }
+    var age by remember { mutableStateOf(currentAge) }
+    var chronic by remember { mutableStateOf(currentChronic) }
+    var blood by remember { mutableStateOf(currentBlood) }
+    var emName by remember { mutableStateOf(currentEmName) }
+    var emPhone by remember { mutableStateOf(currentEmPhone) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Profile Details") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = age, onValueChange = { age = it }, label = { Text("Age") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = chronic, onValueChange = { chronic = it }, label = { Text("Chronic Conditions") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = blood, onValueChange = { blood = it }, label = { Text("Blood Group") }, modifier = Modifier.fillMaxWidth())
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                Text("Emergency Contact", fontWeight = FontWeight.Bold, color = Color.Red)
+                OutlinedTextField(value = emName, onValueChange = { emName = it }, label = { Text("Contact Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = emPhone, onValueChange = { emPhone = it }, label = { Text("Phone Number") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name, age, chronic, blood, emName, emPhone) }) {
+                Text("SAVE")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("CANCEL")
+            }
+        }
+    )
 }

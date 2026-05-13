@@ -10,6 +10,12 @@ data class AshaEvent(
     val date: Long, // timestamp
     val location: String,
     val description: String,
-    val type: String, // "CAMP" or "VISIT"
-    val isCompleted: Boolean = false
+    val type: String, // "CAMP", "VISIT", "VACCINATION", "EMERGENCY"
+    val time: String? = null,
+    val organizer: String? = null,
+    val reminderEnabled: Boolean = false,
+    val isCompleted: Boolean = false,
+    val status: String = "PENDING",
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )

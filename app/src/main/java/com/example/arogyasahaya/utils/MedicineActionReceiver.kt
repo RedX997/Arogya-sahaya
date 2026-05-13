@@ -25,7 +25,8 @@ class MedicineActionReceiver : BroadcastReceiver() {
                     database.appointmentDao(),
                     database.medicalRecordDao(),
                     database.familyMemberDao(),
-                    database.ashaEventDao()
+                    database.ashaEventDao(),
+                    com.example.arogyasahaya.data.remote.NetworkModule.apiService
                 )
                 
                 CoroutineScope(Dispatchers.IO).launch {
