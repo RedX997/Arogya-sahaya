@@ -113,10 +113,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyLocale(language: String) {
-        val langCode = when (language) {
-            "Hindi" -> "hi"
-            "Marathi" -> "mr"
-            "Kannada" -> "kn"
+        val langCode = when {
+            language.contains("Hindi") -> "hi"
+            language.contains("Marathi") -> "mr"
+            language.contains("Kannada") -> "kn"
             else -> "en"
         }
         val locale = Locale(langCode)

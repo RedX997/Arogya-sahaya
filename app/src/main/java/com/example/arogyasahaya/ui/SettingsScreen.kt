@@ -274,7 +274,7 @@ fun SettingsScreen(
                         onClick = {
                             showSelectionDialog = SelectionDialogData(
                                 title = context.getString(R.string.app_language_dialog_title),
-                                options = listOf("English", "Hindi", "Marathi", "Kannada"),
+                                options = listOf("English", "Hindi (हिंदी)", "Marathi (मರಾठी)", "Kannada (ಕನ್ನಡ)"),
                                 currentSelection = appLanguage,
                                 onSelect = {
                                     appLanguage = it
@@ -289,7 +289,7 @@ fun SettingsScreen(
                         onClick = {
                             showSelectionDialog = SelectionDialogData(
                                 title = context.getString(R.string.voice_language_dialog_title),
-                                options = listOf("English", "Hindi", "Marathi", "Kannada"),
+                                options = listOf("English", "Hindi (हिंदी)", "Marathi (मರಾठी)", "Kannada (ಕನ್ನಡ)"),
                                 currentSelection = voiceLanguage,
                                 onSelect = {
                                     voiceLanguage = it

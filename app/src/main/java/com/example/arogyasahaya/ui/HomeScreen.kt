@@ -465,7 +465,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     QuickActionCard(stringResource(R.string.asha_connect), Icons.Default.Groups, Color(0xFF1976D2), Modifier.weight(1f), onViewAshaConnect)
-                    QuickActionCard("Caregiver View", Icons.Default.AdminPanelSettings, Color(0xFF455A64), Modifier.weight(1f), onViewCaregiver)
+                    QuickActionCard(stringResource(R.string.caregiver_view), Icons.Default.AdminPanelSettings, Color(0xFF455A64), Modifier.weight(1f), onViewCaregiver)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -489,6 +489,39 @@ fun HomeScreen(
             }
 
             item {
+                val emergencyName = prefManager.getEmergencyName()
+                val emergencyPhone = prefManager.getEmergencyPhone()
+                
+                if (emergencyName != "Not Set" && emergencyPhone != "Not Set") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().height(90.dp).graphicsLayer { shadowElevation = 4.dp.toPx(); shape = RoundedCornerShape(24.dp) },
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                        shape = RoundedCornerShape(24.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, HealthOrange.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).clickable {
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$emergencyPhone"))
+                                context.startActivity(intent)
+                            },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(stringResource(R.string.emergency_call_btn), color = HealthOrange, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                                Text("${stringResource(R.string.tap_to_call)}: $emergencyName", color = HealthOrange.copy(alpha = 0.7f), fontSize = 12.sp)
+                            }
+                            Box(modifier = Modifier.size(50.dp).clip(CircleShape).background(HealthOrange), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Call, contentDescription = null, tint = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(12.dp)) }
+
+            item {
                 Card(
                     modifier = Modifier.fillMaxWidth().height(90.dp).graphicsLayer { shadowElevation = 4.dp.toPx(); shape = RoundedCornerShape(24.dp) },
                     colors = CardDefaults.cardColors(containerColor = HealthRedLight),
@@ -504,8 +537,8 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("LIFE-LINE SOS", color = HealthRed, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                            Text("TAP TO NAVIGATE TO NEAREST HOSPITAL", color = HealthRed.copy(alpha = 0.6f), fontSize = 12.sp)
+                            Text(stringResource(R.string.sos_emergency), color = HealthRed, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                            Text(stringResource(R.string.tap_to_navigate), color = HealthRed.copy(alpha = 0.6f), fontSize = 12.sp)
                         }
                         Box(modifier = Modifier.size(50.dp).clip(CircleShape).background(HealthRed), contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.Navigation, contentDescription = null, tint = Color.White)

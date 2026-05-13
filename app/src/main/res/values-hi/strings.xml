@@ -134,4 +134,8 @@
     <string name="add_note">एक नोट जोड़ें...</string>
     <string name="save_entry">एंट्री सहेजें</string>
     <string name="past_entries">पुरानी एंट्री</string>
+    <string name="emergency_call_btn">आपातकालीन कॉल</string>
+    <string name="tap_to_navigate">निकटतम अस्पताल जाने के लिए टैप करें</string>
+    <string name="medical_vault">मेडिकल वॉल्ट</string>
+    <string name="asha_connect">आशा कनेक्ट</string>
 </resources>

@@ -154,7 +154,7 @@ fun ProfileScreen(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    listOf("English", "Kannada", "Hindi", "Marathi").forEach { selectionOption ->
+                    listOf("English", "Hindi (हिंदी)", "Marathi (मರಾठी)", "Kannada (ಕನ್ನಡ)").forEach { selectionOption ->
                         DropdownMenuItem(
                             text = { Text(selectionOption) },
                             onClick = {
